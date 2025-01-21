@@ -1,86 +1,150 @@
 #include <iostream>
 #include <string>
-#include <cmath> // Для функции std::abs
 
 using namespace std;
 
-// Функция для вычисления НОД с использованием алгоритма Евклида
-int64_t gcd(int64_t a, int64_t b) {
-    while (b != 0) {
-        int64_t temp = b;
-        b = a % b;
-        a = temp;
+// Функция для проверки, является ли строка положительным целым числом
+bool polchislo(const string& str) {
+    // Проверяем, что строка не пустая и состоит только из цифр
+    if (str.empty() || (str[0] == '0' && str.size() > 1)) {
+        return false; // Не допускается ноль в начале для многозначных чисел
     }
-    return std::abs(a); // Возвращаем модуль НОД
+
+    for (char c : str) {
+        if (!isdigit(c)) {
+            return false; // Содержит нецифровые символы
+        }
+    }
+    return true;
 }
 
-// Функция для проверки корректности ввода
-bool corr(int64_t &num) {
-    string input;
-    cin >> input;
+// Функция для вычитания двух строковых чисел
+string vichit(const string& num1, const string& num2) {
+    string res;
+    int bor = 0;
 
-    // Проверка, что строка состоит только из цифр (может начинаться с '-')
-    if (input.empty() || (input[0] != '-' && !isdigit(input[0]))) {
-        return false; // Некорректный ввод
+    // Удостоверимся, что num1 >= num2
+    string n1 = num1, n2 = num2;
+    if (num1 < num2) {
+        swap(n1, n2);
     }
 
-    for (size_t i = (input[0] == '-' ? 1 : 0); i < input.length(); ++i) {
-        if (!isdigit(input[i])) {
-            return false; // Некорректный ввод
+    while (n2.size() < n1.size()) {
+        n2 = '0' + n2;
+    }
+
+    for (int i = n1.size() - 1; i >= 0; --i) {
+        int digit1 = n1[i] - '0';
+        int digit2 = n2[i] - '0';
+
+        int sub = digit1 - digit2 - bor;
+        if (sub < 0) {
+            sub += 10;
+            bor = 1;
+        }
+        else {
+            bor = 0;
+        }
+        res = char(sub + '0') + res;
+    }
+
+    // Удаляем ведущие нули
+    while (res.size() > 1 && res[0] == '0') {
+        res.erase(0, 1);
+    }
+
+    return res.empty() ? "0" : res;
+}
+
+// Функция для нахождения остатка от деления
+string mod(const string& a, const string& b) {
+    string cur = "0";
+
+    for (char digit : a) {
+        cur += digit;
+
+        // Удаляем ведущие нули
+        while (cur.size() > 1 && cur[0] == '0') {
+            cur.erase(0, 1);
+        }
+
+        // Сравниваем cur и b, пока cur >= b
+        while (cur >= b) {
+            cur = vichit(cur, b);
         }
     }
 
-    // Преобразуем строку в число
-    num = 0;
-    bool neg = (input[0] == '-');
-    
-    for (size_t i = (neg ? 1 : 0); i < input.length(); ++i) {
-        num = num * 10 + (input[i] - '0'); // Преобразование символа в число
+    return cur.empty() ? "0" : cur;
+}
+
+// Функция для нахождения НОД
+string gcd(const string& a, const string& b) {
+    string x = a;
+    string y = b;
+
+    while (y != "0") {
+        string temp = y;
+        y = mod(x, y);
+        x = temp;
     }
 
-    if (neg) num = -num; // Устанавливаем знак
+    // Удаляем ведущие нули
+    while (x.size() > 1 && x[0] == '0') {
+        x.erase(0, 1);
+    }
 
-    return num >= 100000000000; // Проверяем, что число не меньше 10^11
+    return x.empty() ? "0" : x;
+}
+
+// Проверка на взаимную простоту
+bool copr(const string& m, const string& n) {
+    return gcd(m, n) == "1"; // Если НОД равен 1, то числа взаимно простые
+}
+
+// Описание взаимной простоты и вывод НОД
+void explain(const string& m, const string& n, bool coprime, const string& gcdValue) {
+    if (coprime) {
+        cout << "Числа " << m << " и " << n << " являются взаимно простыми.\n";
+    }
+    else {
+        cout << "Числа " << m << " и " << n << " не являются взаимно простыми, есть другой делитель.\n";
+    }
+    cout << "Наибольший общий делитель (НОД): " << gcdValue << endl; // Выводим значение НОД
 }
 
 int main() {
     setlocale(LC_ALL, "RU");
-    int64_t m, n;
+    string m, n;
 
-    cout << "Введите два целых числа (m и n), каждое не менее 10^11:" << endl;
+    // Вводим числа
+    cout << "Введите целые числа m и n (положительные): " << endl;
 
-    // Цикл для получения корректного ввода для m
+    // Проверяем ввод первого числа
     while (true) {
-        cout << "m: ";
-        if (corr(m)) {
-            break; // Выход из цикла, если ввод корректен
-        } else {
-            cout << "Ошибка: число должно быть целым и не менее 10^11. Пожалуйста, попробуйте снова." << endl;
+        cin >> m;
+        if (polchislo(m)) {
+            break; // Ввод корректен
         }
+        cout << "Ошибка: введите положительное целое число >=10^11 для m: " << endl;
     }
 
-    // Цикл для получения корректного ввода для n
+    // Проверяем ввод второго числа
     while (true) {
-        cout << "n: ";
-        if (corr(n)) {
-            break; // Выход из цикла, если ввод корректен
-        } else {
-            cout << "Ошибка: число должно быть целым и не менее 10^11. Пожалуйста, попробуйте снова." << endl;
+        cin >> n;
+        if (polchislo(n)) {
+            break; // Ввод корректен
         }
+        cout << "Ошибка: введите положительное целое число >=10^11 для n: " << endl;
     }
 
-    // Вычисление НОД
-    int64_t res = gcd(m, n);
+    // Находим НОД
+    string gcdValue = gcd(m, n);
     
-    // Вывод НОД
-    cout << "Наибольший общий делитель (НОД) чисел " << m << " и " << n << " равен: " << res << endl;
-
-    // Проверка взаимной простоты
-    if (res == 1) {
-        cout << "Числа " << m << " и " << n << " являются взаимно простыми." << endl;
-    } else {
-        cout << "Числа " << m << " и " << n << " не являются взаимно простыми." << endl;
-    }
+    // Проверяем, являются ли числа взаимно простыми
+    bool coprime = copr(m, n);
+    
+    // Выводим результаты
+    explain(m, n, coprime, gcdValue);
 
     return 0;
 }
